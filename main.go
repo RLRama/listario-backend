@@ -1,18 +1,32 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/kataras/iris/v12"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
 	app := newApp()
 
-	err := app.Listen(":" + os.Getenv("PORT"))
+	db, err := gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{})
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+
+	if err := InitDB(db); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Database initialized and schemas migrated")
+
+	err2 := app.Listen(":" + os.Getenv("PORT"))
+	if err2 != nil {
+		panic(err2)
 	}
 }
 
@@ -27,7 +41,7 @@ func newApp() *iris.Application {
 				"message": "Hello, Iris!",
 			})
 		})
-		testEndpoints.Get("/test-db", func(ctx iris.Context) {
+		testEndpoints.Get("/db-connection", func(ctx iris.Context) {
 			version, err := TestDBConnection()
 			if err != nil {
 				ctx.JSON(iris.Map{
