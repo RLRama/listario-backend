@@ -4,23 +4,19 @@ import (
 	"log"
 	"os"
 
+	"github.com/go-playground/validator/v10"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/kataras/iris/v12"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func main() {
-	app := newApp()
 
-	db, err := gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{})
+	db, err := setupDatabase()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
-	if err := InitDB(db); err != nil {
-		log.Fatal(err)
-	}
+	app := newApp(db)
 
 	log.Println("Database initialized and schemas migrated")
 
@@ -30,18 +26,19 @@ func main() {
 	}
 }
 
-func newApp() *iris.Application {
+func newApp(db Database) *iris.Application {
 	app := iris.Default()
+	app.Validator = validator.New(validator.WithRequiredStructEnabled())
 
 	// test endpoints
-	testEndpoints := app.Party("/test")
+	testRouter := app.Party("/test")
 	{
-		testEndpoints.Get("/hello", func(ctx iris.Context) {
+		testRouter.Get("/hello", func(ctx iris.Context) {
 			ctx.JSON(iris.Map{
 				"message": "Hello, Iris!",
 			})
 		})
-		testEndpoints.Get("/db-connection", func(ctx iris.Context) {
+		testRouter.Get("/db-connection", func(ctx iris.Context) {
 			version, err := TestDBConnection()
 			if err != nil {
 				ctx.JSON(iris.Map{
@@ -56,6 +53,15 @@ func newApp() *iris.Application {
 				"message": "Database connection successful",
 				"version": version,
 			})
+		})
+	}
+
+	// user endpoints
+	userRouter := app.Party("/user")
+	{
+		userRouter.Get("/validation-errors", resolveErrorsDocumentation)
+		userRouter.Post("/register", func(ctx iris.Context) {
+			postUser(ctx, db)
 		})
 	}
 

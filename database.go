@@ -6,6 +6,7 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -33,11 +34,30 @@ func TestDBConnection() (string, error) {
 	return version, nil
 }
 
-func InitDB(db *gorm.DB) error {
-	return db.AutoMigrate(
+func setupDatabase() (*GormDatabase, error) {
+	dsn := os.Getenv("DSN")
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+
+	db.AutoMigrate(
 		&Category{},
 		&Tag{},
 		&User{},
 		&Task{},
 	)
+
+	return &GormDatabase{db}, nil
+}
+
+func populateSampleData(db *gorm.DB) error {
+
+}
+
+// Database operations
+
+func (db *GormDatabase) CreateUser(user *User) error {
+	return db.DB.Create(user).Error
 }

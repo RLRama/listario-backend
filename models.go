@@ -6,17 +6,19 @@ import (
 	"gorm.io/gorm"
 )
 
+// Database table models
+
 type User struct {
 	gorm.Model
-	Username string `gorm:"unique;not null"`
-	Password string `gorm:"not null"`
-	Email    string `gorm:"unique;not null"`
+	Username string `gorm:"unique;not null" json:"username" validate:"required,min=3,max=50"`
+	Password string `gorm:"not null" json:"password" validate:"required,min=8"`
+	Email    string `gorm:"unique;not null" json:"email" validate:"required,email"`
 	Tasks    []Task `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
 type Task struct {
 	gorm.Model
-	Title       string `gorm:"not null"`
+	Title       string `gorm:"not null" validate:"required"`
 	Description string
 	Completed   bool
 	UserID      uint `gorm:"not null"`
@@ -28,11 +30,30 @@ type Task struct {
 
 type Category struct {
 	gorm.Model
-	Name  string `gorm:"unique;not null"`
+	Name  string `gorm:"unique;not null" validate:"required"`
 	Tasks []Task `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
 type Tag struct {
 	gorm.Model
-	Name string `gorm:"unique;not null"`
+	Name string `gorm:"unique;not null" validate:"required"`
+}
+
+// Application-specific models
+
+type GormDatabase struct {
+	*gorm.DB
+}
+
+type Database interface {
+	CreateUser(user *User) error
+}
+
+type validationError struct {
+	ActualTag string `json:"tag"`
+	Namespace string `json:"namespace"`
+	Kind      string `json:"kind"`
+	Type      string `json:"type"`
+	Value     string `json:"value"`
+	Param     string `json:"param"`
 }
