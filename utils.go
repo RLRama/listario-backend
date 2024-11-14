@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// ----------------- Handler utilites -----------------
+// ══════════════════════════ Handler utilites ══════════════════════════
 
 func wrapValidationErrors(errs validator.ValidationErrors) []validationError {
 	validationErrors := make([]validationError, 0, len(errs))

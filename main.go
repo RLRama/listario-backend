@@ -30,7 +30,7 @@ func newApp(db Database) *iris.Application {
 	app := iris.Default()
 	app.Validator = validator.New(validator.WithRequiredStructEnabled())
 
-	// test endpoints
+	// ══════════════════════════ Test routes ══════════════════════════
 	testRouter := app.Party("/test")
 	{
 		testRouter.Get("/hello", func(ctx iris.Context) {
@@ -56,7 +56,7 @@ func newApp(db Database) *iris.Application {
 		})
 	}
 
-	// user endpoints
+	// ══════════════════════════ User routes ══════════════════════════
 	userRouter := app.Party("/user")
 	{
 		userRouter.Get("/validation-errors", resolveErrorsDocumentation)

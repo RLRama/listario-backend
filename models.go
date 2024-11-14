@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Database table models
+// ══════════════════════════ Database table models ══════════════════════════
 
 type User struct {
 	gorm.Model
@@ -39,7 +39,7 @@ type Tag struct {
 	Name string `gorm:"unique;not null" validate:"required"`
 }
 
-// Application-specific models
+// ══════════════════════════ Application-specific models ══════════════════════════
 
 type GormDatabase struct {
 	*gorm.DB
@@ -47,6 +47,7 @@ type GormDatabase struct {
 
 type Database interface {
 	CreateUser(user *User) error
+	GetUserByUsernameOrEmail(username string) (*User, error)
 }
 
 type validationError struct {
@@ -56,4 +57,9 @@ type validationError struct {
 	Type      string `json:"type"`
 	Value     string `json:"value"`
 	Param     string `json:"param"`
+}
+
+type LoginRequest struct {
+	Identifier string `json:"identifier" validate:"required"`
+	Password   string `json:"password" validate:"required"`
 }

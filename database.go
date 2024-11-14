@@ -49,15 +49,66 @@ func setupDatabase() (*GormDatabase, error) {
 		&Task{},
 	)
 
+	if err := populateSampleData(db); err != nil {
+		return nil, err
+	}
+
 	return &GormDatabase{db}, nil
 }
 
 func populateSampleData(db *gorm.DB) error {
+	var count int64
 
+	if err := db.Model(&Category{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count == 0 {
+		categories := []*Category{
+			{Name: "Work"},
+			{Name: "Personal"},
+			{Name: "Family"},
+			{Name: "Shopping"},
+			{Name: "Health"},
+			{Name: "Finance"},
+		}
+
+		if err := db.Create(&categories).Error; err != nil {
+			return err
+		}
+	}
+
+	if err := db.Model(&Tag{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count == 0 {
+		tags := []*Tag{
+			{Name: "Urgent"},
+			{Name: "Important"},
+			{Name: "Low Priority"},
+			{Name: "High Priority"},
+			{Name: "Medium Priority"},
+		}
+
+		if err := db.Create(&tags).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-// Database operations
+// ══════════════════════════ Database operations ══════════════════════════
 
 func (db *GormDatabase) CreateUser(user *User) error {
 	return db.DB.Create(user).Error
+}
+
+func (db *GormDatabase) GetUserByUsernameOrEmail(identifier string) (*User, error) {
+	var user User
+	if err := db.DB.Where("username = ?", identifier).Or("email = ?", identifier).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
