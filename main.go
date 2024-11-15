@@ -54,6 +54,11 @@ func newApp(db Database) *iris.Application {
 				"version": version,
 			})
 		})
+		authorizedTestRouter := testRouter.Party("/protected")
+		authorizedTestRouter.Use(AuthenticationMiddleware)
+		authorizedTestRouter.Get("/", func(ctx iris.Context) {
+			protectedHandler(ctx)
+		})
 	}
 
 	// ══════════════════════════ User routes ══════════════════════════
@@ -62,6 +67,9 @@ func newApp(db Database) *iris.Application {
 		userRouter.Get("/validation-errors", resolveErrorsDocumentation)
 		userRouter.Post("/register", func(ctx iris.Context) {
 			postUser(ctx, db)
+		})
+		userRouter.Post("/login", func(ctx iris.Context) {
+			loginUser(ctx, db)
 		})
 	}
 

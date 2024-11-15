@@ -112,3 +112,15 @@ func (db *GormDatabase) GetUserByUsernameOrEmail(identifier string) (*User, erro
 	}
 	return &user, nil
 }
+
+func (db *GormDatabase) GetUserByID(userID uint) (*User, error) {
+	var user User
+	if err := db.DB.First(&user, userID).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (db *GormDatabase) UpdateUser(user *User) error {
+	return db.DB.Save(user).Error
+}

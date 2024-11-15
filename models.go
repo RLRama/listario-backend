@@ -48,6 +48,8 @@ type GormDatabase struct {
 type Database interface {
 	CreateUser(user *User) error
 	GetUserByUsernameOrEmail(username string) (*User, error)
+	GetUserByID(userID uint) (*User, error)
+	UpdateUser(user *User) error
 }
 
 type validationError struct {
@@ -62,4 +64,9 @@ type validationError struct {
 type LoginRequest struct {
 	Identifier string `json:"identifier" validate:"required"`
 	Password   string `json:"password" validate:"required"`
+}
+
+type UpdateUserRequest struct {
+	Username string `json:"username" validate:"omitempty,min=3,max=50"`
+	Email    string `json:"email" validate:"omitempty,email"`
 }
