@@ -124,3 +124,7 @@ func (db *GormDatabase) GetUserByID(userID uint) (*User, error) {
 func (db *GormDatabase) UpdateUser(user *User) error {
 	return db.DB.Save(user).Error
 }
+
+func (db *GormDatabase) UpdateUserPassword(userID uint, hashedPassword string) error {
+	return db.DB.Model(&User{}).Where("id = ?", userID).Update("password", hashedPassword).Error
+}

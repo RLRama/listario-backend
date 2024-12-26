@@ -11,7 +11,7 @@ import (
 type User struct {
 	gorm.Model
 	Username string `gorm:"unique;not null" json:"username" validate:"required,min=3,max=50"`
-	Password string `gorm:"not null" json:"password" validate:"required,min=8"`
+	Password string `gorm:"not null" json:"password" validate:"required,min=8,containsany=ABCDEFGHIJKLMNOPQRSTUVWXYZ,containsany=abcdefghijklmnopqrstuvwxyz,containsany=0123456789,specialchar"`
 	Email    string `gorm:"unique;not null" json:"email" validate:"required,email"`
 	Tasks    []Task `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
@@ -50,6 +50,7 @@ type Database interface {
 	GetUserByUsernameOrEmail(username string) (*User, error)
 	GetUserByID(userID uint) (*User, error)
 	UpdateUser(user *User) error
+	UpdateUserPassword(userID uint, hashedPassword string) error
 }
 
 type validationError struct {
@@ -69,4 +70,9 @@ type LoginRequest struct {
 type UpdateUserRequest struct {
 	Username string `json:"username" validate:"omitempty,min=3,max=50"`
 	Email    string `json:"email" validate:"omitempty,email"`
+}
+
+type UpdatePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required"`
+	NewPassword     string `json:"new_password" validate:"required,min=8,containsany=ABCDEFGHIJKLMNOPQRSTUVWXYZ,containsany=abcdefghijklmnopqrstuvwxyz,containsany=0123456789,specialchar"`
 }
