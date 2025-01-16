@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
@@ -30,10 +29,6 @@ func wrapValidationErrors(errs validator.ValidationErrors) []validationError {
 	return validationErrors
 }
 
-func validatePassword(password string) bool {
-	return containsUppercase(password) && containsLowercase(password) && containsDigit(password) && containsSpecialChar(password)
-}
-
 func hashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -56,39 +51,15 @@ func generateJWTToken(user *User) (string, error) {
 	return signedToken, nil
 }
 
-func containsUppercase(s string) bool {
-	for _, r := range s {
-		if unicode.IsUpper(r) {
-			return true
+func registerCustomValidators(v *validator.Validate) {
+	v.RegisterValidation("specialchar", func(fl validator.FieldLevel) bool {
+		value := fl.Field().String()
+		specialChars := "!@#$%^&*()-_=+[]{}|;:',.<>?/"
+		for _, ch := range value {
+			if strings.ContainsRune(specialChars, ch) {
+				return true
+			}
 		}
-	}
-	return false
-}
-
-func containsLowercase(s string) bool {
-	for _, r := range s {
-		if unicode.IsLower(r) {
-			return true
-		}
-	}
-	return false
-}
-
-func containsDigit(s string) bool {
-	for _, r := range s {
-		if unicode.IsDigit(r) {
-			return true
-		}
-	}
-	return false
-}
-
-func containsSpecialChar(s string) bool {
-	specialChars := "!@#$%^&*()-_=+[]{}|;:',.<>?/`~"
-	for _, r := range s {
-		if strings.ContainsRune(specialChars, r) {
-			return true
-		}
-	}
-	return false
+		return false
+	})
 }

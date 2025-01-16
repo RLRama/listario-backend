@@ -28,7 +28,9 @@ func main() {
 
 func newApp(db Database) *iris.Application {
 	app := iris.Default()
-	app.Validator = validator.New(validator.WithRequiredStructEnabled())
+	v := validator.New(validator.WithRequiredStructEnabled())
+	registerCustomValidators(v)
+	app.Validator = v
 
 	// ══════════════════════════ Test routes ══════════════════════════
 	testRouter := app.Party("/test")
@@ -71,8 +73,13 @@ func newApp(db Database) *iris.Application {
 		userRouter.Post("/login", func(ctx iris.Context) {
 			loginUser(ctx, db)
 		})
-		userRouter.Put("/update", AuthenticationMiddleware, func(ctx iris.Context) {
+		authorizedUserRouter := userRouter.Party("/protected")
+		authorizedUserRouter.Use(AuthenticationMiddleware)
+		authorizedUserRouter.Put("/update", func(ctx iris.Context) {
 			updateUser(ctx, db)
+		})
+		authorizedUserRouter.Put("/update-password", func(ctx iris.Context) {
+			updateUserPassword(ctx, db)
 		})
 	}
 

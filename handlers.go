@@ -29,13 +29,6 @@ func postUser(ctx iris.Context, db Database) {
 		}
 	}
 
-	if !validatePassword(user.Password) {
-		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-			Title("Invalid password").
-			Detail("Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character"))
-		return
-	}
-
 	hashedPassword, err := hashPassword(user.Password)
 	if err != nil {
 		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
@@ -168,6 +161,68 @@ func updateUser(ctx iris.Context, db Database) {
 
 	ctx.JSON(iris.Map{
 		"message": "User updated successfully",
+	})
+}
+
+func updateUserPassword(ctx iris.Context, db Database) {
+	var req UpdatePasswordRequest
+	if err := ctx.ReadJSON(&req); err != nil {
+		if errs, ok := err.(validator.ValidationErrors); ok {
+			validationErrors := wrapValidationErrors(errs)
+
+			ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+				Title("Invalid input").
+				Detail("One or more fields failed validation").
+				Type("/user/validation-errors").
+				Key("errors", validationErrors))
+			return
+		}
+		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+			Title("Invalid input").
+			Detail(err.Error()).
+			Status(iris.StatusBadRequest))
+		return
+	}
+
+	claims := ctx.Values().Get("claims").(jwt.MapClaims)
+	userID := uint(claims["sub"].(float64))
+
+	user, err := db.GetUserByID(userID)
+	if err != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail("Current password is incorrect: "+err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.CurrentPassword)); err != nil {
+		ctx.StopWithProblem(iris.StatusUnauthorized, iris.NewProblem().
+			Title("Authentication error").
+			Detail("Invalid current password: "+err.Error()).
+			Status(iris.StatusUnauthorized))
+		return
+	}
+
+	hashedPassword, err := hashPassword(req.NewPassword)
+	if err != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	if err := db.UpdateUserPassword(userID, hashedPassword); err != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	ctx.JSON(iris.Map{
+		"message": "Password updated successfully",
 	})
 }
 
