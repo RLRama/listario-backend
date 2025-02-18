@@ -226,6 +226,74 @@ func updateUserPassword(ctx iris.Context, db Database) {
 	})
 }
 
+func logoutUser(ctx iris.Context) {
+	ctx.RemoveCookie("token")
+	ctx.JSON(iris.Map{
+		"message": "Logged out successfully",
+	})
+}
+
+func refreshToken(ctx iris.Context, db Database) {
+	claims := ctx.Values().Get("claims").(jwt.MapClaims)
+	userID := uint(claims["sub"].(float64))
+
+	user, err := db.GetUserByID(userID)
+	if err != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Invalid user").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	token, err := generateJWTToken(user)
+	if err != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Token generation error").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	ctx.SetCookie(&iris.Cookie{
+		Name:     "token",
+		Value:    token,
+		Expires:  time.Now().Add(24 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	ctx.JSON(iris.Map{
+		"message": "Token refreshed successfully",
+		"token":   token,
+	})
+}
+
+func getUserDetails(ctx iris.Context, db Database) {
+	claims := ctx.Values().Get("claims").(jwt.MapClaims)
+	userID := uint(claims["sub"].(float64))
+
+	user, err := db.GetUserByID(userID)
+	if err != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	response := UserResponse{
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+
+	ctx.JSON(response)
+}
+
 // ══════════════════════════ Various handlers ══════════════════════════
 
 func resolveErrorsDocumentation(ctx iris.Context) {

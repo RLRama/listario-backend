@@ -53,6 +53,30 @@
    curl -X PUT http://localhost:8080/user/protected/update-password   -H "Content-Type: application/json"   -b "token=<token_here>"   -d '{"current_password":"old_password123","new_password":"new_password123"}'
    ```
 
+#### Refresh token
+
+- Curl command:
+
+   ```
+   curl -X POST http://localhost:8080/user/protected/refresh   -H "Content-Type: application/json"   -b "token=<token_here>"
+   ```
+
+#### Logout
+
+- Curl command:
+
+   ```
+   curl -X POST http://localhost:8080/user/protected/logout   -H "Content-Type: application/json"   -b "token=<token_here>"
+   ```
+
+#### User details (me)
+
+- Curl command:
+
+   ```
+   curl -X GET http://localhost:8080/user/protected/me   -H "Content-Type: application/json"   -b "token=<token_here>"
+   ```
+
 ### Test endpoints
 
 #### Hello world!
