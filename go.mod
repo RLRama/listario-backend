@@ -15,6 +15,8 @@ require (
 	gorm.io/gorm v1.25.12
 )
 
+require github.com/rogpeppe/go-internal v1.13.1 // indirect
+
 require (
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
