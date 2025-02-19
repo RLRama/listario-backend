@@ -39,19 +39,23 @@ A RESTful API built with [Go](https://go.dev/), [Iris](https://www.iris-go.com/)
    ```
    > Then update this file with your own credentials.
 
-3. Install dependencies with
+3. Update frontend origin string
+
+   - In the function `newApp` in the **main.go** file, specifically the `AllowedOrigins` field
+
+5. Install dependencies with
 
    ```sh
    go mod tidy
    ```
 
-4. Then start the server (this applies auto migrations)
+6. Then start the server (this applies auto migrations)
 
    ```sh
    go run .
    ```
 
-5. Deployment
+7. Deployment
 
    #### Build and run
 
