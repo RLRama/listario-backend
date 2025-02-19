@@ -21,10 +21,18 @@ func main() {
 
 	log.Println("Database initialized and schemas migrated")
 
-	err2 := app.Listen(":" + os.Getenv("PORT"))
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8080"
+	}
+
+	err2 := app.Listen(":" + port)
 	if err2 != nil {
 		panic(err2)
 	}
+
+	log.Println("Listening on port ", port)
 }
 
 func newApp(db Database) *iris.Application {
