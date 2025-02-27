@@ -32,7 +32,6 @@ func main() {
 		panic(err2)
 	}
 
-	log.Println("Listening on port ", port)
 }
 
 func newApp(db Database) *iris.Application {
