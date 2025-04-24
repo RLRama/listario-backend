@@ -84,3 +84,25 @@ type UserResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type TaskRequest struct {
+	Title       string     `json:"title" validate:"required"`
+	Description string     `json:"description" validate:"omitempty"`
+	Completed   bool       `json:"completed"`
+	CategoryID  uint       `json:"category_id" validate:"required"`
+	DueDate     *time.Time `json:"due_date" validate:"omitempty"`
+	TagIDs      []uint     `json:"tag_ids" validate:"omitempty"`
+}
+
+type TaskResponse struct {
+	ID          uint       `json:"id"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Completed   bool       `json:"completed"`
+	UserID      uint       `json:"user_id"`
+	CategoryID  uint       `json:"category_id"`
+	DueDate     *time.Time `json:"due_date"`
+	Tags        []Tag      `json:"tags"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}

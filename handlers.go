@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -289,6 +290,134 @@ func getUserDetails(ctx iris.Context, db Database) {
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
+	}
+
+	ctx.JSON(response)
+}
+
+// ══════════════════════════ Task handlers ══════════════════════════
+
+func createTask(ctx iris.Context, db Database) {
+	var req TaskRequest
+	if err := ctx.ReadJSON(&req); err != nil {
+		if errs, ok := err.(validator.ValidationErrors); ok {
+			validationErrors := wrapValidationErrors(errs)
+
+			ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+				Title("Invalid input").
+				Detail("One or more fields failed validation").
+				Type("/task/validation-errors").
+				Key("errors", validationErrors))
+			return
+		}
+		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+			Title("Invalid input").
+			Detail(err.Error()).
+			Status(iris.StatusBadRequest))
+		return
+	}
+
+	claims := ctx.Values().Get("claims").(jwt.MapClaims)
+	userID := uint(claims["sub"].(float64))
+
+	// Verify existence of category
+	var category Category
+	if err := db.(*GormDatabase).DB.First(&category, req.CategoryID).Error; err != nil {
+		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+			Title("Invalid category").
+			Detail("Category not found: "+err.Error()).
+			Status(iris.StatusBadRequest))
+		return
+	}
+
+	// Fetch tags, if provided
+	var tags []Tag
+	if len(req.TagIDs) > 0 {
+		if err := db.(*GormDatabase).DB.Where("id IN ?", req.TagIDs).Find(&tags).Error; err != nil {
+			ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+				Title("Invalid tags").
+				Detail("Tags not found: "+err.Error()).
+				Status(iris.StatusBadRequest))
+			return
+		}
+	}
+
+	task := Task{
+		Title:       req.Title,
+		Description: req.Description,
+		Completed:   req.Completed,
+		UserID:      userID,
+		CategoryID:  req.CategoryID,
+		DueDate:     req.DueDate,
+		Tags:        tags,
+	}
+
+	if err := db.(*GormDatabase).DB.Create(&task).Error; err != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	response := TaskResponse{
+		ID:          task.ID,
+		Title:       task.Title,
+		Description: task.Description,
+		Completed:   task.Completed,
+		UserID:      task.UserID,
+		CategoryID:  task.CategoryID,
+		DueDate:     task.DueDate,
+		Tags:        task.Tags,
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
+	}
+
+	ctx.JSON(iris.Map{
+		"message": "Task created successfully",
+		"task":    response,
+	})
+}
+
+func listTasks(ctx iris.Context, db Database) {
+	claims := ctx.Values().Get("claims").(jwt.MapClaims)
+	userID := uint(claims["sub"].(float64))
+
+	query := db.(*GormDatabase).DB.Model(&Task{}).Where("user_id = ?", userID).Preload("Tags")
+
+	// Filter by category and tags
+	if categoryID := ctx.URLParam("category_id"); categoryID != "" {
+		query = query.Where("category_id = ?", categoryID)
+	}
+
+	if tagIDs := ctx.URLParam("tag_ids"); tagIDs != "" {
+		query = query.Joins("JOIN task_tags ON task_tags.task_id = tasks.id").
+			Where("task_tags.tag_id IN (?)", strings.Split(tagIDs, ","))
+	}
+
+	var tasks []Task
+	if err := query.Find(&tasks).Error; err != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	response := make([]TaskResponse, len(tasks))
+	for i, task := range tasks {
+		response[i] = TaskResponse{
+			ID:          task.ID,
+			Title:       task.Title,
+			Description: task.Description,
+			Completed:   task.Completed,
+			UserID:      task.UserID,
+			CategoryID:  task.CategoryID,
+			DueDate:     task.DueDate,
+			Tags:        task.Tags,
+			CreatedAt:   task.CreatedAt,
+			UpdatedAt:   task.UpdatedAt,
+		}
 	}
 
 	ctx.JSON(response)
