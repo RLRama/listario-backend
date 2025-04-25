@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/kataras/iris/v12"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // ══════════════════════════ User handlers ══════════════════════════
@@ -421,6 +422,165 @@ func listTasks(ctx iris.Context, db Database) {
 	}
 
 	ctx.JSON(response)
+}
+
+func getTask(ctx iris.Context, db Database) {
+	taskID := ctx.Params().GetUintDefault("id", 0)
+	claims := ctx.Values().Get("claims").(jwt.MapClaims)
+	userID := uint(claims["sub"].(float64))
+
+	var task Task
+	if err := db.(*GormDatabase).DB.Preload("Tags").Where("id = ? AND user_id = ?", taskID, userID).
+		First(&task).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			ctx.StopWithProblem(iris.StatusNotFound, iris.NewProblem().
+				Title("Task not found").
+				Detail("Task with ID "+fmt.Sprint(taskID)+" not found, or you don't have access").
+				Status(iris.StatusNotFound))
+			return
+		}
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	response := TaskResponse{
+		ID:          task.ID,
+		Title:       task.Title,
+		Description: task.Description,
+		Completed:   task.Completed,
+		UserID:      task.UserID,
+		CategoryID:  task.CategoryID,
+		DueDate:     task.DueDate,
+		Tags:        task.Tags,
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
+	}
+
+	ctx.JSON(response)
+}
+
+func updateTask(ctx iris.Context, db Database) {
+	taskID := ctx.Params().GetUintDefault("id", 0)
+	claims := ctx.Values().Get("claims").(jwt.MapClaims)
+	userID := uint(claims["sub"].(float64))
+
+	var req TaskRequest
+	if err := ctx.ReadJSON(&req); err != nil {
+		if errs, ok := err.(validator.ValidationErrors); ok {
+			validationErrors := wrapValidationErrors(errs)
+
+			ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+				Title("Invalid input").
+				Detail("One or more fields failed validation").
+				Type("/task/validation-errors").
+				Key("errors", validationErrors))
+			return
+		}
+		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+			Title("Invalid input").
+			Detail(err.Error()).
+			Status(iris.StatusBadRequest))
+		return
+	}
+
+	var task Task
+	if err := db.(*GormDatabase).DB.Where("id = ? AND user_id = ?", taskID, userID).First(&task).
+		Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			ctx.StopWithProblem(iris.StatusNotFound, iris.NewProblem().
+				Title("Task not found").
+				Detail("Task with ID "+fmt.Sprint(taskID)+" not found, or you don't have access").
+				Status(iris.StatusNotFound))
+			return
+		}
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	var category Category
+	if err := db.(*GormDatabase).DB.First(&category, req.CategoryID).Error; err != nil {
+		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+			Title("Invalid category").
+			Detail("Category not found: "+err.Error()).
+			Status(iris.StatusBadRequest))
+		return
+	}
+
+	var tags []Tag
+	if len(req.TagIDs) > 0 {
+		if err := db.(*GormDatabase).DB.Where("id IN ?", req.TagIDs).Find(&tags).Error; err != nil {
+			ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+				Title("Invalid tags").
+				Detail("Tags not found: "+err.Error()).
+				Status(iris.StatusBadRequest))
+			return
+		}
+	}
+
+	task.Title = req.Title
+	task.Description = req.Description
+	task.Completed = req.Completed
+	task.CategoryID = req.CategoryID
+	task.DueDate = req.DueDate
+	task.Tags = tags
+
+	if err := db.(*GormDatabase).DB.Save(&task).Error; err != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail(err.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+
+	response := TaskResponse{
+		ID:          task.ID,
+		Title:       task.Title,
+		Description: task.Description,
+		Completed:   task.Completed,
+		UserID:      task.UserID,
+		CategoryID:  task.CategoryID,
+		DueDate:     task.DueDate,
+		Tags:        task.Tags,
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
+	}
+
+	ctx.JSON(iris.Map{
+		"message": "Task updated successfully",
+		"task":    response,
+	})
+}
+
+func deleteTask(ctx iris.Context, db Database) {
+	taskID := ctx.Params().GetUintDefault("id", 0)
+	claims := ctx.Values().Get("claims").(jwt.MapClaims)
+	userID := uint(claims["sub"].(float64))
+
+	result := db.(*GormDatabase).DB.Where("id = ? AND user_id = ?", taskID, userID).Delete(&Task{})
+	if result.Error != nil {
+		ctx.StopWithProblem(iris.StatusInternalServerError, iris.NewProblem().
+			Title("Internal server error").
+			Detail(result.Error.Error()).
+			Status(iris.StatusInternalServerError))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.StopWithProblem(iris.StatusNotFound, iris.NewProblem().
+			Title("Task not found").
+			Detail("Task with ID "+fmt.Sprint(taskID)+" not found, or you don't have access").
+			Status(iris.StatusNotFound))
+		return
+	}
+
+	ctx.JSON(iris.Map{
+		"message": "Task deleted successfully",
+	})
 }
 
 // ══════════════════════════ Various handlers ══════════════════════════

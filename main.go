@@ -110,5 +110,26 @@ func newApp(db Database) *iris.Application {
 		})
 	}
 
+	// ══════════════════════════ Task routes ══════════════════════════
+	taskRouter := app.Party("/tasks")
+	{
+		taskRouter.Use(AuthenticationMiddleware)
+		taskRouter.Post("/", func(ctx iris.Context) {
+			createTask(ctx, db)
+		})
+		taskRouter.Get("/", func(ctx iris.Context) {
+			listTasks(ctx, db)
+		})
+		taskRouter.Get("/{id:uint}", func(ctx iris.Context) {
+			getTask(ctx, db)
+		})
+		taskRouter.Put("/{id:uint}", func(ctx iris.Context) {
+			updateTask(ctx, db)
+		})
+		taskRouter.Delete("/{id:uint}", func(ctx iris.Context) {
+			deleteTask(ctx, db)
+		})
+	}
+
 	return app
 }
