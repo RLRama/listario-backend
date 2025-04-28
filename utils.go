@@ -9,9 +9,10 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
-// ══════════════════════════ Handler utilites ══════════════════════════
+// ══════════════════════════ Common utilities ══════════════════════════
 
 func wrapValidationErrors(errs validator.ValidationErrors) []validationError {
 	validationErrors := make([]validationError, 0, len(errs))
@@ -62,4 +63,52 @@ func registerCustomValidators(v *validator.Validate) {
 		}
 		return false
 	})
+}
+
+// ══════════════════════════ Task utilities ══════════════════════════
+
+func validateCategory(db *GormDatabase, categoryID uint) (*Category, error) {
+	var category Category
+	if err := db.First(&category, categoryID).Error; err != nil {
+		return nil, fmt.Errorf("Category does not exist: %w", err)
+	}
+	return &category, nil
+}
+
+func validateTags(db *GormDatabase, tagIDs []uint) ([]Tag, error) {
+	var tags []Tag
+	if len(tagIDs) > 0 {
+		if err := db.Where("id IN ?", tagIDs).Find(&tags).Error; err != nil {
+			return nil, fmt.Errorf("tags do not exist: %w", err)
+		}
+		if len(tags) != len(tagIDs) {
+			return nil, fmt.Errorf("some tag IDs are invalid")
+		}
+	}
+	return tags, nil
+}
+
+func mapTaskToResponse(task *Task) TaskResponse {
+	return TaskResponse{
+		ID:          task.ID,
+		Title:       task.Title,
+		Description: task.Description,
+		Completed:   task.Completed,
+		UserID:      task.UserID,
+		CategoryID:  task.CategoryID,
+		DueDate:     task.DueDate,
+		Tags:        task.Tags,
+	}
+}
+
+func checkTaskOwnership(db *GormDatabase, taskID, userID uint) (*Task, error) {
+	var task Task
+	if err := db.DB.Preload("Tags").Where("id = ? AND user_id = ?", taskID, userID).First(&task).
+		Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("task does not exist or does not belong to the user")
+		}
+		return nil, fmt.Errorf("failed to check task ownership: %w", err)
+	}
+	return &task, nil
 }

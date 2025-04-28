@@ -322,8 +322,7 @@ func createTask(ctx iris.Context, db Database) {
 	userID := uint(claims["sub"].(float64))
 
 	// Verify existence of category
-	var category Category
-	if err := db.(*GormDatabase).DB.First(&category, req.CategoryID).Error; err != nil {
+	if _, err := validateCategory(db.(*GormDatabase), req.CategoryID); err != nil {
 		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
 			Title("Invalid category").
 			Detail("Category not found: "+err.Error()).
@@ -332,15 +331,13 @@ func createTask(ctx iris.Context, db Database) {
 	}
 
 	// Fetch tags, if provided
-	var tags []Tag
-	if len(req.TagIDs) > 0 {
-		if err := db.(*GormDatabase).DB.Where("id IN ?", req.TagIDs).Find(&tags).Error; err != nil {
-			ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-				Title("Invalid tags").
-				Detail("Tags not found: "+err.Error()).
-				Status(iris.StatusBadRequest))
-			return
-		}
+	tags, err := validateTags(db.(*GormDatabase), req.TagIDs)
+	if err != nil {
+		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+			Title("Invalid tags").
+			Detail("Tags not found: "+err.Error()).
+			Status(iris.StatusBadRequest))
+		return
 	}
 
 	task := Task{
@@ -361,22 +358,9 @@ func createTask(ctx iris.Context, db Database) {
 		return
 	}
 
-	response := TaskResponse{
-		ID:          task.ID,
-		Title:       task.Title,
-		Description: task.Description,
-		Completed:   task.Completed,
-		UserID:      task.UserID,
-		CategoryID:  task.CategoryID,
-		DueDate:     task.DueDate,
-		Tags:        task.Tags,
-		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.UpdatedAt,
-	}
-
 	ctx.JSON(iris.Map{
 		"message": "Task created successfully",
-		"task":    response,
+		"task":    mapTaskToResponse(&task),
 	})
 }
 
@@ -407,18 +391,7 @@ func listTasks(ctx iris.Context, db Database) {
 
 	response := make([]TaskResponse, len(tasks))
 	for i, task := range tasks {
-		response[i] = TaskResponse{
-			ID:          task.ID,
-			Title:       task.Title,
-			Description: task.Description,
-			Completed:   task.Completed,
-			UserID:      task.UserID,
-			CategoryID:  task.CategoryID,
-			DueDate:     task.DueDate,
-			Tags:        task.Tags,
-			CreatedAt:   task.CreatedAt,
-			UpdatedAt:   task.UpdatedAt,
-		}
+		response[i] = mapTaskToResponse(&task)
 	}
 
 	ctx.JSON(response)
@@ -429,13 +402,12 @@ func getTask(ctx iris.Context, db Database) {
 	claims := ctx.Values().Get("claims").(jwt.MapClaims)
 	userID := uint(claims["sub"].(float64))
 
-	var task Task
-	if err := db.(*GormDatabase).DB.Preload("Tags").Where("id = ? AND user_id = ?", taskID, userID).
-		First(&task).Error; err != nil {
+	task, err := checkTaskOwnership(db.(*GormDatabase), taskID, userID)
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			ctx.StopWithProblem(iris.StatusNotFound, iris.NewProblem().
 				Title("Task not found").
-				Detail("Task with ID "+fmt.Sprint(taskID)+" not found, or you don't have access").
+				Detail(err.Error()).
 				Status(iris.StatusNotFound))
 			return
 		}
@@ -446,20 +418,7 @@ func getTask(ctx iris.Context, db Database) {
 		return
 	}
 
-	response := TaskResponse{
-		ID:          task.ID,
-		Title:       task.Title,
-		Description: task.Description,
-		Completed:   task.Completed,
-		UserID:      task.UserID,
-		CategoryID:  task.CategoryID,
-		DueDate:     task.DueDate,
-		Tags:        task.Tags,
-		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.UpdatedAt,
-	}
-
-	ctx.JSON(response)
+	ctx.JSON(mapTaskToResponse(task))
 }
 
 func updateTask(ctx iris.Context, db Database) {
@@ -486,13 +445,12 @@ func updateTask(ctx iris.Context, db Database) {
 		return
 	}
 
-	var task Task
-	if err := db.(*GormDatabase).DB.Where("id = ? AND user_id = ?", taskID, userID).First(&task).
-		Error; err != nil {
+	task, err := checkTaskOwnership(db.(*GormDatabase), taskID, userID)
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			ctx.StopWithProblem(iris.StatusNotFound, iris.NewProblem().
 				Title("Task not found").
-				Detail("Task with ID "+fmt.Sprint(taskID)+" not found, or you don't have access").
+				Detail(err.Error()).
 				Status(iris.StatusNotFound))
 			return
 		}
@@ -503,8 +461,7 @@ func updateTask(ctx iris.Context, db Database) {
 		return
 	}
 
-	var category Category
-	if err := db.(*GormDatabase).DB.First(&category, req.CategoryID).Error; err != nil {
+	if _, err := validateCategory(db.(*GormDatabase), req.CategoryID); err != nil {
 		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
 			Title("Invalid category").
 			Detail("Category not found: "+err.Error()).
@@ -512,15 +469,13 @@ func updateTask(ctx iris.Context, db Database) {
 		return
 	}
 
-	var tags []Tag
-	if len(req.TagIDs) > 0 {
-		if err := db.(*GormDatabase).DB.Where("id IN ?", req.TagIDs).Find(&tags).Error; err != nil {
-			ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-				Title("Invalid tags").
-				Detail("Tags not found: "+err.Error()).
-				Status(iris.StatusBadRequest))
-			return
-		}
+	tags, err := validateTags(db.(*GormDatabase), req.TagIDs)
+	if err != nil {
+		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+			Title("Invalid tags").
+			Detail("Tags not found: "+err.Error()).
+			Status(iris.StatusBadRequest))
+		return
 	}
 
 	task.Title = req.Title
@@ -538,22 +493,9 @@ func updateTask(ctx iris.Context, db Database) {
 		return
 	}
 
-	response := TaskResponse{
-		ID:          task.ID,
-		Title:       task.Title,
-		Description: task.Description,
-		Completed:   task.Completed,
-		UserID:      task.UserID,
-		CategoryID:  task.CategoryID,
-		DueDate:     task.DueDate,
-		Tags:        task.Tags,
-		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.UpdatedAt,
-	}
-
 	ctx.JSON(iris.Map{
 		"message": "Task updated successfully",
-		"task":    response,
+		"task":    mapTaskToResponse(task),
 	})
 }
 
