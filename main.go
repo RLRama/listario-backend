@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/iris-contrib/middleware/cors"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/kataras/iris/v12"
 )
@@ -37,14 +36,7 @@ func main() {
 func newApp(db Database) *iris.Application {
 	app := iris.Default()
 
-	crs := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"},
-		AllowCredentials: true,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type"},
-	})
-
-	app.UseRouter(crs)
+	app.UseRouter(configureCORS())
 
 	v := validator.New(validator.WithRequiredStructEnabled())
 	registerCustomValidators(v)

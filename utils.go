@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/iris-contrib/middleware/cors"
+	"github.com/kataras/iris/v12"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -62,6 +64,23 @@ func registerCustomValidators(v *validator.Validate) {
 			}
 		}
 		return false
+	})
+}
+
+func configureCORS() iris.Handler {
+	allowedOriginsStr := os.Getenv("ALLOWED_ORIGINS")
+	var allowedOrigins []string
+	if allowedOriginsStr != "" {
+		allowedOrigins = strings.Split(allowedOriginsStr, ",")
+	} else {
+		allowedOrigins = []string{"*"}
+	}
+
+	return cors.New(cors.Options{
+		AllowedOrigins:   allowedOrigins,
+		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 	})
 }
 
