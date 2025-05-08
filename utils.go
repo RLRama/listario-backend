@@ -108,21 +108,28 @@ func validateTags(db *GormDatabase, tagIDs []uint) ([]Tag, error) {
 }
 
 func mapTaskToResponse(task *Task) TaskResponse {
+	tagNames := make([]string, len(task.Tags))
+	for i, tag := range task.Tags {
+		tagNames[i] = tag.Name
+	}
+
 	return TaskResponse{
-		ID:          task.ID,
-		Title:       task.Title,
-		Description: task.Description,
-		Completed:   task.Completed,
-		UserID:      task.UserID,
-		CategoryID:  task.CategoryID,
-		DueDate:     task.DueDate,
-		Tags:        task.Tags,
+		ID:           task.ID,
+		Title:        task.Title,
+		Description:  task.Description,
+		Completed:    task.Completed,
+		UserID:       task.UserID,
+		CategoryName: task.Category.Name,
+		DueDate:      task.DueDate,
+		TagNames:     tagNames,
+		CreatedAt:    task.CreatedAt,
+		UpdatedAt:    task.UpdatedAt,
 	}
 }
 
 func checkTaskOwnership(db *GormDatabase, taskID, userID uint) (*Task, error) {
 	var task Task
-	if err := db.DB.Preload("Tags").Where("id = ? AND user_id = ?", taskID, userID).First(&task).
+	if err := db.DB.Preload("Tags").Preload("Category").Where("id = ? AND user_id = ?", taskID, userID).First(&task).
 		Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("task does not exist or does not belong to the user")

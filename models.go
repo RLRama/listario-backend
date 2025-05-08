@@ -24,6 +24,7 @@ type Task struct {
 	UserID      uint `gorm:"not null"`
 	User        User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	CategoryID  uint
+	Category    Category `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	DueDate     *time.Time
 	Tags        []Tag `gorm:"many2many:task_tags;"`
 }
@@ -95,14 +96,14 @@ type TaskRequest struct {
 }
 
 type TaskResponse struct {
-	ID          uint       `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Completed   bool       `json:"completed"`
-	UserID      uint       `json:"user_id"`
-	CategoryID  uint       `json:"category_id"`
-	DueDate     *time.Time `json:"due_date"`
-	Tags        []Tag      `json:"tags"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID           uint       `json:"id"`
+	Title        string     `json:"title"`
+	Description  string     `json:"description"`
+	Completed    bool       `json:"completed"`
+	UserID       uint       `json:"user_id"`
+	CategoryName string     `json:"category_name"`
+	DueDate      *time.Time `json:"due_date"`
+	TagNames     []string   `json:"tag_names"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }

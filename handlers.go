@@ -358,6 +358,8 @@ func createTask(ctx iris.Context, db Database) {
 		return
 	}
 
+	db.(*GormDatabase).DB.Preload("Category").Preload("Tags").First(&task, task.ID)
+
 	ctx.JSON(iris.Map{
 		"message": "Task created successfully",
 		"task":    mapTaskToResponse(&task),
@@ -368,7 +370,7 @@ func listTasks(ctx iris.Context, db Database) {
 	claims := ctx.Values().Get("claims").(jwt.MapClaims)
 	userID := uint(claims["sub"].(float64))
 
-	query := db.(*GormDatabase).DB.Model(&Task{}).Where("user_id = ?", userID).Preload("Tags")
+	query := db.(*GormDatabase).DB.Model(&Task{}).Where("user_id = ?", userID).Preload("Tags").Preload("Category")
 
 	// Filter by category and tags
 	if categoryID := ctx.URLParam("category_id"); categoryID != "" {
@@ -492,6 +494,8 @@ func updateTask(ctx iris.Context, db Database) {
 			Status(iris.StatusInternalServerError))
 		return
 	}
+
+	db.(*GormDatabase).DB.Preload("Category").Preload("Tags").First(&task, task.ID)
 
 	ctx.JSON(iris.Map{
 		"message": "Task updated successfully",
