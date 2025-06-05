@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/rs/zerolog"
+	"github.com/RLRama/listario-backend/config"
 )
 
-func init() {
-	zerolog.TimeFieldFormat = zerolog.TimeFormat
+func main() {
+	config.InitLogger()
 }

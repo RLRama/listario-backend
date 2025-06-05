@@ -3,8 +3,12 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -25,10 +29,33 @@ func GetDSN(prefix string) string {
 		host, port, user, password, dbName, sslMode, timeZone)
 }
 
-func connectDB(dsn) *gorm.DB {
-	db, err := gorm.Open("postgres", dsn)
+func GetDBNameFromEnv(prefix string) string {
+	dbName := os.Getenv(prefix + "_DB_NAME")
+	if dbName == "" {
+		panic(fmt.Sprintf("Environment variable %s_DB_NAME is not set", prefix))
+	}
+	return dbName
+}
+
+func connectDB(dsn, name string) *gorm.DB {
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to database: %v", err))
+		log.Fatal().Err(err).Str("db", name).Msg("Failed to connect to database")
 	}
 	return db
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal().Err(err).Str("db", name).Msg("Failed to get underlying SQL DB")
+	}
+}
+
+func InitLogger() {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
+	log.Info().Msg("Logger initialized with 'stderr' output")
+}
+
+func InitDBs() {
+
 }
