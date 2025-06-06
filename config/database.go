@@ -3,10 +3,9 @@ package config
 import (
 	"fmt"
 	"os"
-	"time"
 
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/rs/zerolog"
+	"github.com/kataras/iris/v12"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -42,20 +41,26 @@ func connectDB(dsn, name string) *gorm.DB {
 	if err != nil {
 		log.Fatal().Err(err).Str("db", name).Msg("Failed to connect to database")
 	}
-	return db
 
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Fatal().Err(err).Str("db", name).Msg("Failed to get underlying SQL DB")
 	}
+
+	if err := sqlDB.Ping(); err != nil {
+		log.Fatal().Err(err).Str("db", name).Msg("failed to ping database")
+	}
+
+	log.Info().Str("db", name).Msg("database connection successful")
+	return db
 }
 
-func InitLogger() {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
-	log.Info().Msg("Logger initialized with 'stderr' output")
-}
+func testDBConnections(ctx iris.Context) {
+	var result1, result2 int
 
-func InitDBs() {
-
+	if err := TestDB.Raw("SELECT 1").Scan(&result1).Error; err != nil {
+		log.Error().Err(err).Msg("TestDB connection failed")
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.
+	}
 }
