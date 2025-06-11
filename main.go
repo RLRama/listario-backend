@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	config.InitLogger()
+	logger := config.SetupLogger()
 }
