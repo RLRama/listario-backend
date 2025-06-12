@@ -5,14 +5,12 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
-func SetupLogger() *zerolog.Logger {
-	logger := zerolog.New(zerolog.ConsoleWriter{
+func SetupLogger() {
+	output := log.Output(zerolog.ConsoleWriter{
 		Out:        os.Stdout,
-		TimeFormat: time.RFC3339,
-	}).With().
-		Timestamp().
-		Logger()
-	return &logger
+		TimeFormat: time.RFC3339})
+
 }
