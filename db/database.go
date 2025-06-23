@@ -1,4 +1,4 @@
-package config
+package db
 
 import (
 	"fmt"
@@ -7,11 +7,6 @@ import (
 	"github.com/RLRama/listario-backend/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-)
-
-var (
-	TestDB *gorm.DB
-	ProdDB *gorm.DB
 )
 
 func GetDSN(prefix string) string {
