@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/RLRama/listario-backend/db"
 	"github.com/RLRama/listario-backend/logger"
 	"github.com/RLRama/listario-backend/middleware"
 	"github.com/kataras/iris/v12"
@@ -16,10 +15,13 @@ func main() {
 
 	logger.Info().Msgf("Starting Listario backend on port %s...", os.Getenv("PORT"))
 
-	database, err := db.InitDB(db.GetDSN("DB"))
-	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to initialize database")
-	}
+	/*
+		database, err := db.InitDB(db.GetDSN("DB"))
+		if err != nil {
+			logger.Fatal().Err(err).Msg("Failed to initialize database")
+		}
+	*/
+	// will uncomment once first (user) service which consumes the database is implemented
 
 	app := iris.Default()
 
@@ -35,7 +37,7 @@ func main() {
 		ctx.WriteString("OK")
 	})
 
-	err = app.Listen(":" + os.Getenv("PORT"))
+	err := app.Listen(":" + os.Getenv("PORT"))
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to start the server")
 	}
