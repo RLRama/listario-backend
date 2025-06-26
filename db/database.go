@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/RLRama/listario-backend/logger"
+	"github.com/RLRama/listario-backend/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -29,7 +30,7 @@ func InitDB(dsn string) (*gorm.DB, error) {
 	}
 
 	err = db.AutoMigrate(
-	// Models to be added here
+		&models.User{},
 	)
 
 	if err != nil {

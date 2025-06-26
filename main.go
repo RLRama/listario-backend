@@ -5,9 +5,9 @@ import (
 
 	"github.com/RLRama/listario-backend/logger"
 	"github.com/RLRama/listario-backend/middleware"
-	"github.com/kataras/iris/v12"
-
+	"github.com/RLRama/listario-backend/utils"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -27,6 +27,7 @@ func main() {
 
 	// Placeholder for upcoming service and handler initialization
 
+	app.Validator = utils.NewCustomValidator()
 	app.Use(middleware.RequestLogger())
 
 	// Placeholder for upcoming routes
