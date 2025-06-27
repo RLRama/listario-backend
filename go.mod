@@ -37,6 +37,7 @@ require (
 	github.com/kataras/blocks v0.0.8 // indirect
 	github.com/kataras/golog v0.1.11 // indirect
 	github.com/kataras/iris/v12 v12.2.11 // indirect
+	github.com/kataras/jwt v0.1.12 // indirect
 	github.com/kataras/pio v0.0.13 // indirect
 	github.com/kataras/sitemap v0.0.6 // indirect
 	github.com/kataras/tunnel v0.0.4 // indirect

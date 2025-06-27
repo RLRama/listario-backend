@@ -3,8 +3,10 @@ package main
 import (
 	"os"
 
+	"github.com/RLRama/listario-backend/db"
 	"github.com/RLRama/listario-backend/logger"
 	"github.com/RLRama/listario-backend/middleware"
+	"github.com/RLRama/listario-backend/repository"
 	"github.com/RLRama/listario-backend/utils"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/kataras/iris/v12"
@@ -15,17 +17,17 @@ func main() {
 
 	logger.Info().Msgf("Starting Listario backend on port %s...", os.Getenv("PORT"))
 
-	/*
-		database, err := db.InitDB(db.GetDSN("DB"))
-		if err != nil {
-			logger.Fatal().Err(err).Msg("Failed to initialize database")
-		}
-	*/
-	// will uncomment once first (user) service which consumes the database is implemented
+	signer, verifier, err := utils.SetupJWT()
+
+	database, err := db.InitDB(db.GetDSN("DB"))
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize database")
+	}
 
 	app := iris.Default()
 
-	// Placeholder for upcoming service and handler initialization
+	userRepository := repository.NewUserRepository(database)
+	// userService :=
 
 	app.Validator = utils.NewCustomValidator()
 	app.Use(middleware.RequestLogger())
