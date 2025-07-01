@@ -12,3 +12,19 @@ type User struct {
 type UserClaims struct {
 	UserID uint `json:"user_id"`
 }
+
+type RegisterRequest struct {
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,password"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+type UpdateUserRequest struct {
+	Username string `json:"username"`
+	Email    string `json:"email" validate:"omitempty,email"`
+}

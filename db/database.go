@@ -19,7 +19,7 @@ func GetDSN(prefix string) string {
 	sslMode := os.Getenv(prefix + "_DB_SSL_MODE")
 	timeZone := os.Getenv(prefix + "_DB_TIME_ZONE")
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",
-		host, port, user, password, dbName, sslMode, timeZone)
+		host, user, password, dbName, port, sslMode, timeZone)
 }
 
 func InitDB(dsn string) (*gorm.DB, error) {

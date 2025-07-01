@@ -14,10 +14,10 @@ var (
 )
 
 type UserService interface {
-	Register(name, email, password string) (*models.User, error)
+	Register(username, email, password string) (*models.User, error)
 	Login(email, password string) (string, error)
 	GetUserDetails(userID uint) (*models.User, error)
-	UpdateUserDetails(userID uint, name, email string) (*models.User, error)
+	UpdateUserDetails(userID uint, username, email string) (*models.User, error)
 }
 
 type userService struct {
