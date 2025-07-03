@@ -79,6 +79,16 @@ func (s *userService) GetUserDetails(userID uint) (*models.User, error) {
 }
 
 func (s *userService) UpdateUserDetails(userID uint, username, email string) (*models.User, error) {
+	if email != "" {
+		existingUser, err := s.userRepo.FindByEmail(email)
+		if err != nil && !errors.Is(err, repository.ErrUserNotFound) {
+			return nil, err
+		}
+		if existingUser != nil && existingUser.ID != userID {
+			return nil, repository.ErrUserAlreadyExists
+		}
+	}
+
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
 		return nil, err
