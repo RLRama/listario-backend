@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"strconv"
+	"time"
 
 	"github.com/RLRama/listario-backend/models"
 	"github.com/RLRama/listario-backend/repository"
@@ -15,20 +17,23 @@ var (
 
 type UserService interface {
 	Register(username, email, password string) (*models.User, error)
-	Login(email, password string) (string, error)
+	Login(email, password string) (jwt.TokenPair, error)
+	RefreshToken(userID uint) (jwt.TokenPair, error)
 	GetUserDetails(userID uint) (*models.User, error)
 	UpdateUserDetails(userID uint, username, email string) (*models.User, error)
 }
 
 type userService struct {
-	userRepo repository.UserRepository
-	signer   *jwt.Signer
+	userRepo           repository.UserRepository
+	signer             *jwt.Signer
+	refreshTokenMaxAge time.Duration
 }
 
-func NewUserService(repo repository.UserRepository, signer *jwt.Signer) UserService {
+func NewUserService(repo repository.UserRepository, signer *jwt.Signer, refreshTokenMaxAge time.Duration) UserService {
 	return &userService{
-		userRepo: repo,
-		signer:   signer,
+		userRepo:           repo,
+		signer:             signer,
+		refreshTokenMaxAge: refreshTokenMaxAge,
 	}
 }
 
@@ -51,27 +56,34 @@ func (s *userService) Register(username, email, password string) (*models.User, 
 	return user, nil
 }
 
-func (s *userService) Login(email, password string) (string, error) {
+func (s *userService) Login(email, password string) (jwt.TokenPair, error) {
 	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
-			return "", ErrInvalidCredentials
+			return jwt.TokenPair{}, ErrInvalidCredentials
 		}
-		return "", err
+		return jwt.TokenPair{}, err
 	}
 
 	if !utils.CheckPasswordHash(password, user.Password) {
-		return "", ErrInvalidCredentials
+		return jwt.TokenPair{}, ErrInvalidCredentials
 	}
 
-	claims := models.UserClaims{UserID: user.ID}
+	return s.generateTokenPair(user.ID)
+}
 
-	token, err := s.signer.Sign(claims)
-	if err != nil {
-		return "", err
+func (s *userService) RefreshToken(userID uint) (jwt.TokenPair, error) {
+	if _, err := s.userRepo.FindByID(userID); err != nil {
+		return jwt.TokenPair{}, err
 	}
+	return s.generateTokenPair(userID)
+}
 
-	return string(token), nil
+func (s *userService) generateTokenPair(userID uint) (jwt.TokenPair, error) {
+	accessClaims := models.UserClaims{UserID: userID}
+	refreshClaims := jwt.Claims{Subject: strconv.FormatUint(uint64(userID), 10)}
+
+	return s.signer.NewTokenPair(accessClaims, refreshClaims, s.refreshTokenMaxAge)
 }
 
 func (s *userService) GetUserDetails(userID uint) (*models.User, error) {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/RLRama/listario-backend/logger"
 	"github.com/RLRama/listario-backend/models"
@@ -29,11 +30,11 @@ func NewUserHandler(us service.UserService, verifier *jwt.Verifier) *UserHandler
 // @Tags         Authentication
 // @Accept       json
 // @Produce      json
-// @Param        payload   body      models.RegisterRequest  true  "User Registration Payload"
-// @Success      201  {object}  models.UserResponse
-// @Failure      400  {object}  object{error=string} "Invalid request format"
-// @Failure      409  {object}  object{error=string} "User with this email already exists"
-// @Failure      500  {object}  object{error=string} "Failed to register user"
+// @Param        payload  body      models.RegisterRequest  true  "User Registration Payload"
+// @Success      201      {object}  models.UserResponse
+// @Failure      400      {object}  object{error=string} "Invalid request format"
+// @Failure      409      {object}  object{error=string} "User with this email already exists"
+// @Failure      500      {object}  object{error=string} "Failed to register user"
 // @Router       /auth/register [post]
 func (h *UserHandler) Register(ctx iris.Context) {
 	var req models.RegisterRequest
@@ -71,15 +72,15 @@ func (h *UserHandler) Register(ctx iris.Context) {
 
 // Login
 // @Summary      Log in a user
-// @Description  Logs in a user with an email and password, returning a JWT.
+// @Description  Logs in a user and returns an access token and a refresh token.
 // @Tags         Authentication
 // @Accept       json
 // @Produce      json
-// @Param        payload   body      models.LoginRequest     true  "User Login Payload"
-// @Success      200  {object}  object{token=string}
-// @Failure      400  {object}  object{error=string} "Invalid request format"
-// @Failure      401  {object}  object{error=string} "Invalid credentials"
-// @Failure      500  {object}  object{error=string} "Login failed"
+// @Param        payload  body      models.LoginRequest  true  "User Login Payload"
+// @Success      200      {object}  jwt.TokenPair        "A pair of access and refresh tokens"
+// @Failure      400      {object}  object{error=string} "Invalid request format"
+// @Failure      401      {object}  object{error=string} "Invalid credentials"
+// @Failure      500      {object}  object{error=string} "Login failed"
 // @Router       /auth/login [post]
 func (h *UserHandler) Login(ctx iris.Context) {
 	var req models.LoginRequest
@@ -90,7 +91,7 @@ func (h *UserHandler) Login(ctx iris.Context) {
 		return
 	}
 
-	token, err := h.userService.Login(req.Email, req.Password)
+	tokenPair, err := h.userService.Login(req.Email, req.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			ctx.StatusCode(iris.StatusUnauthorized)
@@ -104,7 +105,7 @@ func (h *UserHandler) Login(ctx iris.Context) {
 	}
 
 	ctx.StatusCode(iris.StatusOK)
-	ctx.JSON(iris.Map{"token": token})
+	ctx.JSON(tokenPair)
 }
 
 // GetMyDetails
@@ -153,12 +154,12 @@ func (h *UserHandler) GetMyDetails(ctx iris.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        payload   body      models.UpdateUserRequest  true  "User Update Payload"
-// @Success      200  {object}  models.UserResponse
-// @Failure      400  {object}  object{error=string} "Invalid request format"
-// @Failure      401  {object}  object{error=string} "Unauthorized"
-// @Failure      409  {object}  object{error=string} "User with this email already exists"
-// @Failure      500  {object}  object{error=string} "Could not update user details"
+// @Param        payload  body      models.UpdateUserRequest  true  "User Update Payload"
+// @Success      200      {object}  models.UserResponse
+// @Failure      400      {object}  object{error=string} "Invalid request format"
+// @Failure      401      {object}  object{error=string} "Unauthorized"
+// @Failure      409      {object}  object{error=string} "User with this email already exists"
+// @Failure      500      {object}  object{error=string} "Could not update user details"
 // @Router       /users/me [put]
 func (h *UserHandler) UpdateMyDetails(ctx iris.Context) {
 	claims := jwt.Get(ctx).(*models.UserClaims)
@@ -197,6 +198,53 @@ func (h *UserHandler) UpdateMyDetails(ctx iris.Context) {
 	ctx.JSON(response)
 }
 
+// RefreshToken
+// @Summary      Refresh access token
+// @Description  Provides a new access and refresh token pair using a valid refresh token.
+// @Tags         Authentication
+// @Accept       json
+// @Produce      json
+// @Param        payload  body      jwt.TokenPair        true  "Payload with the 'refresh_token' field populated"
+// @Success      200      {object}  jwt.TokenPair        "A new pair of access and refresh tokens"
+// @Failure      400      {object}  object{error=string} "Invalid request format"
+// @Failure      401      {object}  object{error=string} "Invalid or expired refresh token"
+// @Failure      500      {object}  object{error=string} "Could not refresh token"
+// @Router       /auth/refresh [post]
+func (h *UserHandler) RefreshToken(ctx iris.Context) {
+	var tokenPair jwt.TokenPair
+	if err := ctx.ReadJSON(&tokenPair); err != nil {
+		ctx.StopWithError(iris.StatusBadRequest, err)
+		return
+	}
+
+	refreshToken := tokenPair.RefreshToken
+	if len(refreshToken) == 0 {
+		ctx.StopWithStatus(iris.StatusUnauthorized)
+		return
+	}
+
+	verifiedToken, err := h.verifier.VerifyToken(refreshToken)
+	if err != nil {
+		ctx.StopWithError(iris.StatusUnauthorized, err)
+		return
+	}
+
+	userID, err := strconv.ParseUint(verifiedToken.StandardClaims.Subject, 10, 64)
+	if err != nil {
+		ctx.StopWithError(iris.StatusUnauthorized, errors.New("invalid subject in refresh token"))
+		return
+	}
+
+	newTokenPair, err := h.userService.RefreshToken(uint(userID))
+	if err != nil {
+		ctx.StopWithError(iris.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.StatusCode(iris.StatusOK)
+	ctx.JSON(newTokenPair)
+}
+
 // Logout
 // @Summary      Log out the current user
 // @Description  Invalidates the current user's JWT, effectively logging them out.
@@ -209,18 +257,8 @@ func (h *UserHandler) UpdateMyDetails(ctx iris.Context) {
 // @Router       /users/logout [get]
 func (h *UserHandler) Logout(ctx iris.Context) {
 	verifiedToken := jwt.GetVerifiedToken(ctx)
-	if verifiedToken == nil {
-		ctx.StatusCode(iris.StatusUnauthorized)
-		ctx.JSON(iris.Map{"error": "invalid token"})
-		return
-	}
-
-	err := h.verifier.Blocklist.InvalidateToken(verifiedToken.Token, verifiedToken.StandardClaims)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to invalidate token")
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "could not logout"})
-		return
+	if verifiedToken != nil {
+		h.verifier.Blocklist.InvalidateToken(verifiedToken.Token, verifiedToken.StandardClaims)
 	}
 
 	ctx.StatusCode(iris.StatusOK)

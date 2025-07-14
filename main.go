@@ -41,7 +41,7 @@ func main() {
 
 	logger.Info().Msgf("Starting Listario backend on port %s...", os.Getenv("PORT"))
 
-	signer, verifier, err := utils.SetupJWT()
+	signer, verifier, refreshTokenMaxAge, err := utils.SetupJWT()
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to set up JWT signer and verifier")
 	}
@@ -60,7 +60,7 @@ func main() {
 	app.Get("/swagger/{any:path}", swagger.CustomWrapHandler(config, swaggerFiles.Handler))
 
 	userRepository := repository.NewGormUserRepository(database)
-	userService := service.NewUserService(userRepository, signer)
+	userService := service.NewUserService(userRepository, signer, refreshTokenMaxAge)
 	userHandler := handler.NewUserHandler(userService, verifier)
 
 	app.Validator = utils.NewCustomValidator()

@@ -24,6 +24,7 @@ func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, verifi
 	{
 		authAPI.Post("/register", userHandler.Register)
 		authAPI.Post("/login", userHandler.Login)
+		authAPI.Post("/refresh", userHandler.RefreshToken)
 	}
 
 	// Protected routes
