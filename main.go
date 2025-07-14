@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/RLRama/listario-backend/db"
@@ -39,7 +40,12 @@ import (
 func main() {
 	logger.SetupLogger()
 
-	logger.Info().Msgf("Starting Listario backend on port %s...", os.Getenv("PORT"))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	logger.Info().Msgf("Starting Listario backend on port %s...", port)
 
 	signer, verifier, refreshTokenMaxAge, err := utils.SetupJWT()
 	if err != nil {
@@ -53,8 +59,9 @@ func main() {
 
 	app := iris.Default()
 
+	swaggerURL := fmt.Sprintf("http://localhost:%s/swagger/doc.json", port)
 	config := &swagger.Config{
-		URL:         "http://localhost:8080/swagger/doc.json",
+		URL:         swaggerURL,
 		DeepLinking: true,
 	}
 	app.Get("/swagger/{any:path}", swagger.CustomWrapHandler(config, swaggerFiles.Handler))
