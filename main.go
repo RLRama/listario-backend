@@ -30,7 +30,7 @@ import (
 // @license.name  MIT License
 // @license.url   https://opensource.org/license/mit/
 
-// @host      localhost:8080
+// @host
 // @BasePath  /
 
 // @securityDefinitions.apikey BearerAuth
