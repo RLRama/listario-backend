@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/RLRama/listario-backend/db"
@@ -59,7 +58,7 @@ func main() {
 
 	app := iris.Default()
 
-	swaggerURL := fmt.Sprintf("http://localhost:%s/swagger/doc.json", port)
+	swaggerURL := "/swagger/doc.json"
 	config := &swagger.Config{
 		URL:         swaggerURL,
 		DeepLinking: true,
