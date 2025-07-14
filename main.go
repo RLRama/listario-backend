@@ -75,7 +75,7 @@ func main() {
 
 	router.SetupRoutes(app, userHandler, verifier)
 
-	if err := app.Listen(":" + os.Getenv("PORT")); err != nil {
+	if err := app.Listen(":" + port); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to start the server")
 	}
 }
