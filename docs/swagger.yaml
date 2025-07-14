@@ -1,5 +1,16 @@
 basePath: /
 definitions:
+  github_com_kataras_iris_v12_middleware_jwt.TokenPair:
+    properties:
+      access_token:
+        items:
+          type: integer
+        type: array
+      refresh_token:
+        items:
+          type: integer
+        type: array
+    type: object
   models.LoginRequest:
     properties:
       email:
@@ -60,7 +71,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Logs in a user with an email and password, returning a JWT.
+      description: Logs in a user and returns an access token and a refresh token.
       parameters:
       - description: User Login Payload
         in: body
@@ -72,12 +83,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: A pair of access and refresh tokens
           schema:
-            properties:
-              token:
-                type: string
-            type: object
+            $ref: '#/definitions/github_com_kataras_iris_v12_middleware_jwt.TokenPair'
         "400":
           description: Invalid request format
           schema:
@@ -100,6 +108,50 @@ paths:
                 type: string
             type: object
       summary: Log in a user
+      tags:
+      - Authentication
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Provides a new access and refresh token pair using a valid refresh
+        token.
+      parameters:
+      - description: Payload with the 'refresh_token' field populated
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kataras_iris_v12_middleware_jwt.TokenPair'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A new pair of access and refresh tokens
+          schema:
+            $ref: '#/definitions/github_com_kataras_iris_v12_middleware_jwt.TokenPair'
+        "400":
+          description: Invalid request format
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Could not refresh token
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Refresh access token
       tags:
       - Authentication
   /auth/register:

@@ -25,7 +25,7 @@ const docTemplate = `{
     "paths": {
         "/auth/login": {
             "post": {
-                "description": "Logs in a user with an email and password, returning a JWT.",
+                "description": "Logs in a user and returns an access token and a refresh token.",
                 "consumes": [
                     "application/json"
                 ],
@@ -49,14 +49,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "A pair of access and refresh tokens",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "token": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/github_com_kataras_iris_v12_middleware_jwt.TokenPair"
                         }
                     },
                     "400": {
@@ -83,6 +78,73 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Login failed",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Provides a new access and refresh token pair using a valid refresh token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "description": "Payload with the 'refresh_token' field populated",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kataras_iris_v12_middleware_jwt.TokenPair"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A new pair of access and refresh tokens",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kataras_iris_v12_middleware_jwt.TokenPair"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or expired refresh token",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Could not refresh token",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -355,6 +417,23 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "github_com_kataras_iris_v12_middleware_jwt.TokenPair": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "refresh_token": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "models.LoginRequest": {
             "type": "object",
             "required": [
