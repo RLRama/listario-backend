@@ -31,6 +31,7 @@ func InitDB(dsn string) (*gorm.DB, error) {
 
 	err = db.AutoMigrate(
 		&models.User{},
+		&models.Task{},
 	)
 
 	if err != nil {

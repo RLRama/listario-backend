@@ -11,6 +11,17 @@ definitions:
           type: integer
         type: array
     type: object
+  models.CreateTaskRequest:
+    properties:
+      content:
+        type: string
+      title:
+        maxLength: 100
+        minLength: 1
+        type: string
+    required:
+    - title
+    type: object
   models.LoginRequest:
     properties:
       email:
@@ -33,6 +44,34 @@ definitions:
     - email
     - password
     - username
+    type: object
+  models.TaskResponse:
+    properties:
+      completed:
+        type: boolean
+      content:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+      updatedAt:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.UpdateTaskRequest:
+    properties:
+      completed:
+        type: boolean
+      content:
+        type: string
+      title:
+        maxLength: 100
+        minLength: 1
+        type: string
     type: object
   models.UpdateUserRequest:
     properties:
@@ -196,6 +235,213 @@ paths:
       summary: Register a new user
       tags:
       - Authentication
+  /tasks:
+    get:
+      description: Retrieves a list of all tasks belonging to the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.TaskResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Could not retrieve tasks
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all tasks for the current user
+      tags:
+      - Tasks
+    post:
+      consumes:
+      - application/json
+      description: Creates a new task for the authenticated user.
+      parameters:
+      - description: Task Creation Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.TaskResponse'
+        "400":
+          description: Invalid request format or validation failed
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Failed to create task
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new task
+      tags:
+      - Tasks
+  /tasks/{id}:
+    delete:
+      description: Deletes a specific task if it belongs to the authenticated user.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized or access denied
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Task not found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Could not delete task
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a task
+      tags:
+      - Tasks
+    get:
+      description: Retrieves details for a specific task if it belongs to the authenticated
+        user.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TaskResponse'
+        "401":
+          description: Unauthorized or access denied
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Task not found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a single task by ID
+      tags:
+      - Tasks
+    put:
+      consumes:
+      - application/json
+      description: Updates a specific task's details if it belongs to the authenticated
+        user.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task Update Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TaskResponse'
+        "400":
+          description: Invalid request format or ID
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized or access denied
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Task not found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Could not update task
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a task
+      tags:
+      - Tasks
   /users/logout:
     get:
       description: Invalidates the current user's JWT, effectively logging them out.

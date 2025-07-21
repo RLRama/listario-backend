@@ -66,13 +66,18 @@ func main() {
 	app.Get("/swagger/{any:path}", swagger.CustomWrapHandler(config, swaggerFiles.Handler))
 
 	userRepository := repository.NewGormUserRepository(database)
+	taskRepository := repository.NewGormTaskRepository(database)
+
 	userService := service.NewUserService(userRepository, signer, refreshTokenMaxAge)
+	taskService := service.NewTaskService(taskRepository)
+
 	userHandler := handler.NewUserHandler(userService, verifier)
+	taskHandler := handler.NewTaskHandler(taskService)
 
 	app.Validator = utils.NewCustomValidator()
 	app.Use(middleware.RequestLogger())
 
-	router.SetupRoutes(app, userHandler, verifier)
+	router.SetupRoutes(app, userHandler, taskHandler, verifier)
 
 	if err := app.Listen(":" + port); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to start the server")

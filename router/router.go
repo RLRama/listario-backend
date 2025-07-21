@@ -8,7 +8,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/jwt"
 )
 
-func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, verifier *jwt.Verifier) {
+func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, taskHandler *handler.TaskHandler, verifier *jwt.Verifier) {
 	verifyMiddleware := verifier.Verify(func() interface{} {
 		return new(models.UserClaims)
 	})
@@ -34,5 +34,14 @@ func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, verifi
 		userAPI.Get("/me", userHandler.GetMyDetails)
 		userAPI.Put("/me", userHandler.UpdateMyDetails)
 		userAPI.Get("/logout", userHandler.Logout)
+	}
+	taskAPI := app.Party("/tasks")
+	taskAPI.Use(verifyMiddleware)
+	{
+		taskAPI.Post("/", taskHandler.CreateTask)
+		taskAPI.Get("/", taskHandler.GetMyTasks)
+		taskAPI.Get("/{id:uint}", taskHandler.GetTask)
+		taskAPI.Put("/{id:uint}", taskHandler.UpdateTask)
+		taskAPI.Delete("/{id:uint}", taskHandler.DeleteTask)
 	}
 }
