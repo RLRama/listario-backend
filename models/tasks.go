@@ -12,7 +12,6 @@ type Task struct {
 	Content   string `json:"content"`
 	Completed bool   `gorm:"default:false" json:"completed"`
 	UserID    uint   `gorm:"not null" json:"user_id"`
-	User      User   `gorm:"foreignKey:UserID" json:"-"`
 }
 
 type CreateTaskRequest struct {
