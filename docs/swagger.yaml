@@ -32,6 +32,11 @@ definitions:
     - email
     - password
     type: object
+  models.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
   models.RegisterRequest:
     properties:
       email:
@@ -160,7 +165,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_kataras_iris_v12_middleware_jwt.TokenPair'
+          $ref: '#/definitions/models.RefreshRequest'
       produces:
       - application/json
       responses:
