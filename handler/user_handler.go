@@ -204,26 +204,26 @@ func (h *UserHandler) UpdateMyDetails(ctx iris.Context) {
 // @Tags         Authentication
 // @Accept       json
 // @Produce      json
-// @Param        payload  body      jwt.TokenPair        true  "Payload with the 'refresh_token' field populated"
-// @Success      200      {object}  jwt.TokenPair        "A new pair of access and refresh tokens"
-// @Failure      400      {object}  object{error=string} "Invalid request format"
-// @Failure      401      {object}  object{error=string} "Invalid or expired refresh token"
-// @Failure      500      {object}  object{error=string} "Could not refresh token"
+// @Param        payload  body      RefreshRequest        true  "The refresh token"
+// @Success      200      {object}  jwt.TokenPair         "A new pair of access and refresh tokens"
+// @Failure      400      {object}  object{error=string}  "Invalid request format"
+// @Failure      401      {object}  object{error=string}  "Invalid or expired refresh token"
+// @Failure      500      {object}  object{error=string}  "Could not refresh token"
 // @Router       /auth/refresh [post]
 func (h *UserHandler) RefreshToken(ctx iris.Context) {
-	var tokenPair jwt.TokenPair
-	if err := ctx.ReadJSON(&tokenPair); err != nil {
+	var req models.RefreshRequest
+	if err := ctx.ReadJSON(&req); err != nil {
 		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
 	}
 
-	refreshToken := tokenPair.RefreshToken
+	refreshToken := req.RefreshToken
 	if len(refreshToken) == 0 {
 		ctx.StopWithStatus(iris.StatusUnauthorized)
 		return
 	}
 
-	verifiedToken, err := h.verifier.VerifyToken(refreshToken)
+	verifiedToken, err := h.verifier.VerifyToken([]byte(refreshToken))
 	if err != nil {
 		ctx.StopWithError(iris.StatusUnauthorized, err)
 		return

@@ -34,6 +34,10 @@ type UpdateUserRequest struct {
 	Email    string `json:"email" validate:"omitempty,email"`
 }
 
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 type UserResponse struct {
 	ID        uint      `json:"id"`
 	Username  string    `json:"username"`
