@@ -204,7 +204,7 @@ func (h *UserHandler) UpdateMyDetails(ctx iris.Context) {
 // @Tags         Authentication
 // @Accept       json
 // @Produce      json
-// @Param        payload  body      RefreshRequest        true  "The refresh token"
+// @Param        payload  body      models.RefreshRequest        true  "The refresh token"
 // @Success      200      {object}  jwt.TokenPair         "A new pair of access and refresh tokens"
 // @Failure      400      {object}  object{error=string}  "Invalid request format"
 // @Failure      401      {object}  object{error=string}  "Invalid or expired refresh token"

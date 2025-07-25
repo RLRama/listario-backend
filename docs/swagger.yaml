@@ -160,7 +160,7 @@ paths:
       description: Provides a new access and refresh token pair using a valid refresh
         token.
       parameters:
-      - description: Payload with the 'refresh_token' field populated
+      - description: The refresh token
         in: body
         name: payload
         required: true

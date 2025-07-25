@@ -98,7 +98,7 @@
                 "summary": "Refresh access token",
                 "parameters": [
                     {
-                        "description": "Payload with the 'refresh_token' field populated",
+                        "description": "The refresh token",
                         "name": "payload",
                         "in": "body",
                         "required": true,
