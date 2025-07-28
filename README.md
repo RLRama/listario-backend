@@ -61,7 +61,7 @@ nano .env # then fill with valid Postgres DB and API properties
 
 - [x] Basic task CRUD endpoints
 - [x] User system (authentication, sessions, etc.)
-- [x] Live deployment (on Koyeb)
+- [x] Live deployment (on [Koyeb](https://modest-sibley-rlrama-ba015418.koyeb.app/swagger/index.html#/))
 - [ ] Docker containerization
 - [ ] Advanced task features (searching, exporting, priorities, etc.)
 - [ ] Email notifications
