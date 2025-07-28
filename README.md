@@ -37,7 +37,7 @@ nano .env # then fill with valid Postgres DB and API properties
        ```
        
      * ```bash
-       ./main.go # run generated executable generated previously
+       ./main.go # run executable generated previously
        ```
    * Run binary:
       
