@@ -6,6 +6,7 @@ import (
 	"github.com/RLRama/listario-backend/logger"
 	"github.com/kataras/iris/v12"
 	"github.com/rs/zerolog"
+	"github.com/iris-contrib/middleware/throttler"
 )
 
 func RequestLogger() iris.Handler {
@@ -37,4 +38,8 @@ func RequestLogger() iris.Handler {
 			Msgf("Request %s %s completed with status %d in %s",
 				method, path, statusCode, latency)
 	}
+}
+
+func RateLimiter(maxRatePerMinute int) iris.Handler {
+	// wip
 }

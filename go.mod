@@ -8,6 +8,8 @@ require (
 	gorm.io/gorm v1.30.0
 )
 
+require github.com/throttled/throttled/v2 v2.13.0 // indirect
+
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
@@ -33,6 +35,7 @@ require (
 	github.com/gomarkdown/markdown v0.0.0-20250311123330-531bef5e742b // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
+	github.com/iris-contrib/middleware/throttler v0.0.0-20250207234507-372f6828ef8c
 	github.com/iris-contrib/schema v0.0.6 // indirect
 	github.com/iris-contrib/swagger/v12 v12.2.0-alpha // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
