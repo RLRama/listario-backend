@@ -1,6 +1,6 @@
 module github.com/RLRama/listario-backend
 
-go 1.24.5
+go 1.24.6
 
 require (
 	github.com/joho/godotenv v1.5.1
