@@ -1,6 +1,8 @@
 module github.com/RLRama/listario-backend
 
-go 1.24.6
+go 1.24.3
+
+toolchain go1.24.6
 
 require (
 	github.com/joho/godotenv v1.5.1
@@ -47,7 +49,7 @@ require (
 	github.com/kataras/blocks v0.0.11 // indirect
 	github.com/kataras/golog v0.1.13 // indirect
 	github.com/kataras/iris/v12 v12.2.11
-	github.com/kataras/jwt v0.1.16 // indirect
+	github.com/kataras/jwt v0.1.15 // indirect
 	github.com/kataras/pio v0.0.14 // indirect
 	github.com/kataras/sitemap v0.0.6 // indirect
 	github.com/kataras/tunnel v0.0.4 // indirect
