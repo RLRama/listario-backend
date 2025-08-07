@@ -58,6 +58,8 @@ func main() {
 
 	app := iris.Default()
 
+	rateLimiter := middleware.NewRateLimiter(300, 10)
+
 	swaggerURL := "/swagger/doc.json"
 	config := &swagger.Config{
 		URL:         swaggerURL,
@@ -77,7 +79,7 @@ func main() {
 	app.Validator = utils.NewCustomValidator()
 	app.Use(middleware.RequestLogger())
 
-	router.SetupRoutes(app, userHandler, taskHandler, verifier)
+	router.SetupRoutes(app, userHandler, taskHandler, verifier, rateLimiter)
 
 	if err := app.Listen(":" + port); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to start the server")

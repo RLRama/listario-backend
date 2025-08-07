@@ -8,10 +8,11 @@ import (
 	"github.com/kataras/iris/v12/middleware/jwt"
 )
 
-func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, taskHandler *handler.TaskHandler, verifier *jwt.Verifier) {
+func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, taskHandler *handler.TaskHandler, verifier *jwt.Verifier, rateLimiter iris.Handler) {
 	verifyMiddleware := verifier.Verify(func() interface{} {
 		return new(models.UserClaims)
 	})
+
 	// Misc routes
 	app.Get("/health", func(ctx iris.Context) {
 		logger.Info().Msg("Received /health check request")
@@ -21,6 +22,7 @@ func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, taskHa
 
 	// Public routes
 	authAPI := app.Party("/auth")
+	authAPI.Use(rateLimiter)
 	{
 		authAPI.Post("/register", userHandler.Register)
 		authAPI.Post("/login", userHandler.Login)
@@ -29,6 +31,7 @@ func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, taskHa
 
 	// Protected routes
 	userAPI := app.Party("/users")
+	userAPI.Use(rateLimiter)
 	userAPI.Use(verifyMiddleware)
 	{
 		userAPI.Get("/me", userHandler.GetMyDetails)
@@ -36,6 +39,7 @@ func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, taskHa
 		userAPI.Get("/logout", userHandler.Logout)
 	}
 	taskAPI := app.Party("/tasks")
+	taskAPI.Use(rateLimiter)
 	taskAPI.Use(verifyMiddleware)
 	{
 		taskAPI.Post("/", taskHandler.CreateTask)
