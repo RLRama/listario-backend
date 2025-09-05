@@ -67,6 +67,16 @@ definitions:
       user_id:
         type: integer
     type: object
+  models.UpdatePasswordRequest:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
   models.UpdateTaskRequest:
     properties:
       completed:
@@ -565,6 +575,54 @@ paths:
       security:
       - BearerAuth: []
       summary: Update current user details
+      tags:
+      - Users
+  /users/me/password:
+    put:
+      consumes:
+      - application/json
+      description: Updates the password for the currently authenticated user.
+      parameters:
+      - description: User Password Update Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: Invalid request format
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Invalid old password
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Could not update password
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update current user's password
       tags:
       - Users
 securityDefinitions:

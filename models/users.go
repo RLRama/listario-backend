@@ -34,6 +34,11 @@ type UpdateUserRequest struct {
 	Email    string `json:"email" validate:"omitempty,email"`
 }
 
+type UpdatePasswordRequest struct {
+	OldPassword string `json:"old_password" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required,password"`
+}
+
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }

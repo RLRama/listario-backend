@@ -21,6 +21,7 @@ type UserService interface {
 	RefreshToken(userID uint) (jwt.TokenPair, error)
 	GetUserDetails(userID uint) (*models.User, error)
 	UpdateUserDetails(userID uint, username, email string) (*models.User, error)
+	UpdatePassword(userID uint, oldPassword, newPassword string) error
 }
 
 type userService struct {
@@ -118,4 +119,23 @@ func (s *userService) UpdateUserDetails(userID uint, username, email string) (*m
 	}
 
 	return user, nil
+}
+
+func (s *userService) UpdatePassword(userID uint, oldPassword, newPassword string) error {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return err
+	}
+
+	if !utils.CheckPasswordHash(oldPassword, user.Password) {
+		return ErrInvalidCredentials
+	}
+
+	hashedPassword, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	user.Password = hashedPassword
+	return s.userRepo.Update(user)
 }

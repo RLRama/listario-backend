@@ -198,6 +198,53 @@ func (h *UserHandler) UpdateMyDetails(ctx iris.Context) {
 	ctx.JSON(response)
 }
 
+// UpdateMyPassword
+// @Summary      Update current user's password
+// @Description  Updates the password for the currently authenticated user.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        payload  body      models.UpdatePasswordRequest  true  "User Password Update Payload"
+// @Success      200      {object}  object{message=string}
+// @Failure      400      {object}  object{error=string} "Invalid request format"
+// @Failure      401      {object}  object{error=string} "Invalid old password"
+// @Failure      500      {object}  object{error=string} "Could not update password"
+// @Router       /users/me/password [put]
+func (h *UserHandler) UpdateMyPassword(ctx iris.Context) {
+	claims := jwt.Get(ctx).(*models.UserClaims)
+
+	var req models.UpdatePasswordRequest
+	if err := ctx.ReadJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Failed to read update password request")
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(iris.Map{"error": "invalid request format"})
+		return
+	}
+
+	err := h.userService.UpdatePassword(claims.UserID, req.OldPassword, req.NewPassword)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidCredentials) {
+			ctx.StatusCode(iris.StatusUnauthorized)
+			ctx.JSON(iris.Map{"error": "invalid old password"})
+			return
+		}
+
+		logger.Error().Err(err).Uint("userID", claims.UserID).Msg("Failed to update user password")
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(iris.Map{"error": "could not update password"})
+		return
+	}
+
+	verifiedToken := jwt.GetVerifiedToken(ctx)
+	if verifiedToken != nil {
+		h.verifier.Blocklist.InvalidateToken(verifiedToken.Token, verifiedToken.StandardClaims)
+	}
+
+	ctx.StatusCode(iris.StatusOK)
+	ctx.JSON(iris.Map{"message": "password updated successfully"})
+}
+
 // RefreshToken
 // @Summary      Refresh access token
 // @Description  Provides a new access and refresh token pair using a valid refresh token.

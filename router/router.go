@@ -37,6 +37,7 @@ func SetupRoutes(app *iris.Application, userHandler *handler.UserHandler, taskHa
 		userAPI.Get("/me", userHandler.GetMyDetails)
 		userAPI.Put("/me", userHandler.UpdateMyDetails)
 		userAPI.Get("/logout", userHandler.Logout)
+		userAPI.Put("/me/password", userHandler.UpdateMyPassword)
 	}
 	taskAPI := app.Party("/tasks")
 	taskAPI.Use(rateLimiter)
